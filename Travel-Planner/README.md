@@ -1,6 +1,6 @@
 # Travel Planner App
 
-This is a simple project to learn LangGraph.
+This is a travel planner app to help the people to plan based on the provided budget and destination
 
 ## Set up
 
