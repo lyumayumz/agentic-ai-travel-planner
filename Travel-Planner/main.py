@@ -1,7 +1,8 @@
+from dotenv import load_dotenv
 from nodes import build_graph
 from travel_state import TravelState
 from utils import debug
-
+load_dotenv(override=True) 
 def main():
     print("=== AI Travel Planning Committee with LangGraph ===\n")
 
@@ -12,12 +13,12 @@ def main():
     }
 
     state = TravelState()
-
+    state.update("user", user)
     debug("Initializing LangGraph...")
     graph = build_graph()
 
     debug("Starting graph execution...")
-    graph.invoke({"user": user})
+    graph.invoke(state)
 
     print("\n✅ FINAL TRAVEL PLAN")
     print(state.get("final_plan"))

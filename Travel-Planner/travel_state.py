@@ -16,5 +16,3 @@ class TravelState:
 
     def show(self):
         return self.data
-
-
