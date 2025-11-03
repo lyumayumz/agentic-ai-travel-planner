@@ -1,86 +1,69 @@
-from typing import Literal
-from state import State
-from agents import coordinator, participant, summarizer
+from langgraph.graph import StateGraph, START, END
+from travel_state import TravelState
+from agents.coordinator_agent import CoordinatorAgent
+from agents.destination_agent import DestinationAgent
+from agents.budget_agent import BudgetAgent
+from agents.itinerary_agent import ItineraryAgent
+from utils import debug
 
 
-def human_node(state: State) -> dict:
-    """
-    Human input node - gets user input and sets volley count.
-    """
-    user_input = input("\nYou: ").strip()
-
-    human_message = {
-        "role": "user",
-        "content": f"You: {user_input}"
-    }
-
-    # Copy existing messages and append the new one
-    messages = state.get("messages", []).copy()
-    messages.append(human_message)
-
-    return {
-        "messages": messages,
-        "volley_msg_left": 5
-    }
+def start_node(state: dict):
+    """Initialize graph with existing state (always dict)."""
+    debug("LangGraph: Starting execution")
+    return {"status": "started"}  
 
 
-def check_exit_condition(state: State) -> Literal["summarizer", "coordinator"]:
-    """
-    Check if user typed 'exit' to end conversation.
-    """
-    messages = state.get("messages", [])
-    if messages:
-        last_message = messages[-1]
-        content = last_message.get("content", "")
-
-        if "exit" in content.lower():
-            return "summarizer"
-
-    return "coordinator"
+def destination_node(state: dict):
+    debug("LangGraph: Running Destination node")
+    t_state = TravelState()
+    t_state._data = state  
+    DestinationAgent(t_state).run()
+    return {"destination": t_state.get("destination")}
 
 
-def coordinator_routing(state: State) -> Literal["participant", "human"]:
-    """
-    Route from coordinator based on volley count.
-    """
-    volley_left = state.get("volley_msg_left", 0)
-
-    if volley_left > 0:
-        return "participant"
-    else:
-        return "human"
+def budget_node(state: dict):
+    debug("LangGraph: Running Budget node")
+    t_state = TravelState()
+    t_state._data = state
+    BudgetAgent(t_state).run()
+    return {"budget_plan": t_state.get("budget_plan")}
 
 
-def participant_node(state: State) -> dict:
-    """
-    Participant node - calls the appropriate participant and handles output.
-    """
-    next_speaker = state.get("next_speaker", "ah_seng")  # Default fallback
-
-    # Call participant with the selected speaker
-    result = participant(next_speaker, state)
-
-    # Print and return messages
-    if result and "messages" in result:
-        messages = state.get("messages", []).copy()
-        for msg in result["messages"]:
-            print(msg.get("content", ""))
-            messages.append(msg)
-
-        return {"messages": messages}
-
-    return {}
+def itinerary_node(state: dict):
+    debug("LangGraph: Running Itinerary node")
+    t_state = TravelState()
+    t_state._data = state
+    ItineraryAgent(t_state).run()
+    return {"itinerary": t_state.get("itinerary")}
 
 
-def summarizer_node(state: State) -> dict:
-    """
-    Summarizer node - generates and displays conversation summary.
-    """
-    print("\n=== CONVERSATION ENDING ===\n")
+def coordinator_node(state: dict):
+    debug("LangGraph: Running Coordinator node")
+    t_state = TravelState()
+    t_state._data = state
+    CoordinatorAgent(t_state).run()
+    return {"final_plan": t_state.get("final_plan")}
 
-    # Generate and print summary
-    summary = summarizer(state)
-    print(summary)
-    print("\nThank you! Come back to kopitiam anytime lah!")
 
-    return {}  # Empty update to end
+def build_graph():
+    debug("Building LangGraph...")
+
+    builder = StateGraph(dict) 
+
+    # Add nodes
+    builder.add_node("start", start_node)
+    builder.add_node("destination", destination_node)
+    builder.add_node("budget", budget_node)
+    builder.add_node("itinerary", itinerary_node)
+    builder.add_node("coordinator", coordinator_node)
+
+    # Define edges
+    builder.add_edge(START, "start")
+    builder.add_edge("start", "destination")
+    builder.add_edge("destination", "budget")
+    builder.add_edge("budget", "itinerary")
+    builder.add_edge("itinerary", "coordinator")
+    builder.add_edge("coordinator", END)
+
+    debug("LangGraph build complete.")
+    return builder.compile()
