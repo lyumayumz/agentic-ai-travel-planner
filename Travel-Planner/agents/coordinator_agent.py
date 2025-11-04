@@ -48,18 +48,18 @@ class CoordinatorAgent:
         """
 
         ### UNCOMMENT FOR OPENAI ###
-        # response = llm.invoke([
-        #     SystemMessage(content=system_prompt),
-        #     HumanMessage(content=user_prompt)
-        # ])
+        response = llm.invoke([
+            SystemMessage(content=system_prompt),
+            HumanMessage(content=user_prompt)
+        ])
 
-        # summary = response.content.strip()
-        # self.state.update("final_plan", summary)
+        summary = response.content.strip()
+        self.state.update("final_plan", summary)
 
         ### FOR NOAI ###
-        self.destination_agent.run()
-        self.budget_agent.run()
-        self.itinerary_agent.run()
+        # self.destination_agent.run()
+        # self.budget_agent.run()
+        # self.itinerary_agent.run()
         
 
         self.state.update("final_plan", {

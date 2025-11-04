@@ -1,10 +1,12 @@
-from tools.poi_tool import POITool
 from utils import debug
+from tools.destination_tool import DestinationTool
+from langchain_openai import ChatOpenAI
+from langchain.schema import SystemMessage, HumanMessage
+
 
 class DestinationAgent:
     """
-    Agent to select a travel destination based on user preferences.
-    Can be deterministic for testing or later upgraded to AI suggestions.
+    Determines travel destination(s) based on user preferences and budget.
     """
 
     def __init__(self, state):
@@ -14,28 +16,39 @@ class DestinationAgent:
         debug("DestinationAgent: Selecting destination...")
 
         user = self.state.get("user", {})
-        origin = user.get("origin", "Unknown")
         preferences = user.get("preferences", [])
+        budget = user.get("budget", 0)
+        origin = user.get("origin", "")
 
-        # Deterministic selection for testing
-        # For example, pick a city based on a simple rule
-        if "beach" in preferences:
-            destination = {"city": "Bali", "country": "Indonesia"}
-        elif "culture" in preferences:
-            destination = {"city": "Kyoto", "country": "Japan"}
-        elif "adventure" in preferences:
-            destination = {"city": "Queenstown", "country": "New Zealand"}
-        else:
-            destination = {"city": "Singapore", "country": "Singapore"}
+        # --- Option 1: Use OpenAI model for intelligent suggestions ---
+        try:
+            llm = ChatOpenAI(model="gpt-5-nano", temperature=0.7)
+            system_prompt = (
+                "You are a world-class travel recommender. "
+                "Based on the user's origin, preferences, and budget, suggest 1 ideal destination. "
+                "Return JSON in the format: {city: <city>, country: <country>, reason: <why this fits>}"
+            )
 
-        debug(f"DestinationAgent: Selected {destination['city']}, {destination['country']}")
+            user_prompt = f"""
+            Origin: {origin}
+            Preferences: {preferences}
+            Budget: ${budget}
+            """
 
-        # Optional: fetch top POIs for the destination for initial hints
-        pois = POITool.get_top_pois(destination["city"], limit=5)
-        debug(f"DestinationAgent: Top POIs - {pois}")
+            response = llm.invoke([
+                SystemMessage(content=system_prompt),
+                HumanMessage(content=user_prompt)
+            ])
 
-        # Save destination and POIs to state
+            suggestion = response.content.strip()
+            debug(f"DestinationAgent (OpenAI): {suggestion}")
+            destination = DestinationTool.parse_llm_suggestion(suggestion)
+
+        except Exception as e:
+            debug(f"DestinationAgent: OpenAI failed ({e}), falling back to Geoapify.")
+            # --- Option 2: Fallback to Geoapify Tool (no OpenAI) ---
+            destination = DestinationTool.suggest_from_preferences(preferences)
+
+        # Update final destination in state
         self.state.update("destination", destination)
-        self.state.update("destination_pois", pois)
-
-        debug("DestinationAgent: Destination selection complete.")
+        debug(f"DestinationAgent: Final destination = {destination}")
