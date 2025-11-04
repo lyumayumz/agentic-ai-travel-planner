@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 from travel_state import TravelState
 from nodes import start_node, destination_node, budget_node, itinerary_node, coordinator_node
-from utils import debug
+from utils import debug, beautify_itinerary
 
 load_dotenv(override=True)
 
@@ -27,7 +27,7 @@ def main():
     coordinator_node(state)
 
     print("\n✅ FINAL TRAVEL PLAN\n")
-    print(state.get("final_plan"))
+    beautify_itinerary(state.get("final_plan"))
 
 if __name__ == "__main__":
     main()

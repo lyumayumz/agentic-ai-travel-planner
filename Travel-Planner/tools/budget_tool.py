@@ -5,7 +5,6 @@ from utils import debug
 
 load_dotenv()
 
-
 class BudgetTool:
     """
     Tool for estimating trip budget using free or mock APIs.

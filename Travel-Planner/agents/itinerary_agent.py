@@ -27,8 +27,7 @@ class ItineraryAgent:
         # Define POI types for itinerary
         poi_types = {
             "attractions": ["tourism.sights", "tourism.attraction"],
-            "restaurants": ["catering.restaurant"],
-            "museums": ["entertainment.museum", "cultural"]
+            "restaurants": ["catering.restaurant"]
         }
 
         itinerary = {}
