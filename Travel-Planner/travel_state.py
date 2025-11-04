@@ -11,8 +11,8 @@ class TravelState:
     def update(self, key, value):
         self.data[key] = value
 
-    def get(self, key):
-        return self.data.get(key)
+    def get(self, key, default=None): 
+        return self.data.get(key, default)
 
     def show(self):
         return self.data
