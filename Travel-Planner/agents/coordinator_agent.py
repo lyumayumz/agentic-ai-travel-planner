@@ -46,6 +46,8 @@ class CoordinatorAgent:
         Budget Plan: {budget_plan}
         Itinerary: {itinerary}
         """
+
+        ### UNCOMMENT FOR OPENAI ###
         response = llm.invoke([
             SystemMessage(content=system_prompt),
             HumanMessage(content=user_prompt)
@@ -53,13 +55,17 @@ class CoordinatorAgent:
 
         summary = response.content.strip()
         self.state.update("final_plan", summary)
+
+        ### FOR NOAI ###
         # self.destination_agent.run()
         # self.budget_agent.run()
         # self.itinerary_agent.run()
-        debug("Coordinator finished planning.")
+        
 
-        # self.state.update("final_plan", {
-        #     "recommendation": "Bali 🇮🇩",
-        #     "estimated_cost": "$980",
-        #     "duration": "5 days / 4 nights"
-        # })
+        self.state.update("final_plan", {
+        "destination": self.state.get("destination"),
+        "budget_plan": self.state.get("budget_plan"),
+        "itinerary": self.state.get("itinerary")
+        })
+
+        debug("Coordinator finished planning.")
